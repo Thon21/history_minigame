@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>戰國策：生存抉擇</title>
+    <style>
+        :root {
+            --bg-color: #2c2c2c;
+            --panel-color: #f4e1c1; /* 羊皮紙色 */
+            --text-color: #3e2723;
+            --highlight: #d32f2f; /* 秦紅 */
+            --btn-color: #5d4037;
+            --btn-hover: #795548;
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", "Heiti TC", serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: radial-gradient(#3c3c3c 15%, transparent 16%),
+            radial-gradient(#3c3c3c 15%, transparent 16%);
+            background-size: 60px 60px;
+        }
+
+        .game-container {
+            width: 800px;
+            background-color: var(--panel-color);
+            border: 8px solid #8d6e63;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            padding: 20px;
+            position: relative;
+        }
+
+        .header {
+            border-bottom: 2px solid var(--text-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .stat {
+            background: rgba(0,0,0,0.1);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .stat span { color: var(--highlight); }
+
+        .main-content {
+            display: flex;
+            gap: 20px;
+            height: 400px;
+        }
+
+        .log-area {
+            flex: 1;
+            background: rgba(255,255,255,0.5);
+            padding: 10px;
+            border-radius: 5px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            color: #555;
+            border: 1px solid #ccc;
+        }
+
+        .event-area {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .event-title {
+            font-size: 1.5rem;
+            color: var(--highlight);
+            margin: 0 0 10px 0;
+            font-weight: bold;
+        }
+
+        .event-desc {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            min-height: 100px;
+        }
+
+        .choices {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            background-color: var(--btn-color);
+            color: #fff;
+            border: none;
+            padding: 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.2s;
+            text-align: left;
+            position: relative;
+        }
+
+        button:hover {
+            background-color: var(--btn-hover);
+            transform: translateX(5px);
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .tooltip {
+            font-size: 0.8rem;
+            color: #ddd;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .year-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--text-color);
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-color);
+            padding: 0 20px;
+            border: 2px solid #8d6e63;
+            border-radius: 20px;
+        }
+
+        /* 結局畫面 */
+        #ending-screen {
+            display: none;
+            text-align: center;
+        }
+        
+        #game-screen {
+            display: block;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="year-display">戰國 <span id="year">453</span> 年</div>
+
+    <!-- 遊戲主畫面 -->
+    <div id="game-screen">
+        <div class="header">
+            <div><strong>國號：</strong> 魏 (戰國七雄之一)</div>
+            <div class="stats-bar">
+                <div class="stat">🌾 糧食: <span id="grain">50</span></div>
+                <div class="stat">⚔️ 軍力: <span id="army">30</span></div>
+                <div class="stat">⚖️ 穩定: <span id="stability">50</span></div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="event-area">
+                <div>
+                    <h2 class="event-title" id="event-title">事件標題</h2>
+                    <p class="event-desc" id="event-desc">事件描述...</p>
+                </div>
+                <div class="choices" id="choices-container">
+                    <!-- 選項按鈕會在這裡生成 -->
+                </div>
+            </div>
+            <div class="log-area" id="log-area">
+                <p>--- 史官紀錄 ---</p>
+                <p>三家分晉，魏國正式立國。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 結局畫面 -->
+    <div id="ending-screen">
+        <h1 id="end-title" style="color: var(--highlight);">遊戲結束</h1>
+        <p id="end-desc" style="font-size: 1.2rem;">結局描述</p>
+        <button onclick="location.reload()" style="text-align: center; margin-top: 20px;">📜 再玩一次，改寫歷史</button>
+    </div>
+</div>
+
+<script>
+    // 遊戲狀態
+    let state = {
+        year: 453, // 西元前453年（三家分晉）
+        grain: 50,    // 經濟基礎
+        army: 30,     // 軍事力量
+        stability: 50, // 國內穩定度 (貴族vs平民)
+        turn: 0
+    };
+
+    // 事件庫 (基於影片內容設計)
+    const events = [
+        {
+            id: 1,
+            title: "三家分晉",
+            desc: "晉國強大的智伯被消滅，韓、趙、魏三家瓜分了晉國的土地。作為魏國的初代國君，您現在面臨最重要的選擇：國家未來的發展方向是什麼？",
+            options: [
+                { text: "休養生息，發展農業", tooltip: "糧食+20，軍力-5", effect: {g:20, a:-5, s:0}, msg: "百姓得以耕作，糧倉漸滿。" },
+                { text: "擴充軍備，準備兼併", tooltip: "軍力+20，糧食-10", effect: {g:-10, a:20, s:0}, msg: "軍隊整戈待旦，鄰國感到威脅。" },
+                { text: "籠絡貴族，鞏固統治", tooltip: "穩定+20，糧食-10", effect: {g:-10, a:0, s:20}, msg: "舊貴族勢力得到安撫，但也埋下隱患。" }
+            ]
+        },
+        {
+            id: 2,
+            title: "井田制的崩壞",
+            desc: "隨著鐵犁牛耕的出現，民間私自開墾的土地（私田）越來越多，公家的「井田」卻荒廢了。國庫收入大減，您該如何改革稅制？",
+            options: [
+                { text: "實行「初稅畝」", tooltip: "承認私田合法並徵稅。糧食+30，穩定-10", effect: {g:30, a:0, s:-10}, msg: "仿效魯國制度，國庫瞬間充盈，但守舊派貴族不滿。" },
+                { text: "嚴禁私田，強迫歸公", tooltip: "穩定-30，糧食+5", effect: {g:5, a:0, s:-30}, msg: "百姓怨聲載道，部分農民逃往鄰國。" },
+                { text: "維持現狀，睜隻眼閉隻眼", tooltip: "無變化", effect: {g:-5, a:0, s:5}, msg: "國庫日益空虛，國家發展停滯。" }
+            ]
+        },
+        {
+            id: 3,
+            title: "百家爭鳴：求賢若渴",
+            desc: "各國都在招攬人才。今日宮外來了三位學者，分別代表不同的思想流派，您決定接見哪一位並採納其意見？",
+            options: [
+                { text: "法家學者 (如李斯、韓非)", tooltip: "軍力+20，穩定+10，糧食-10", effect: {g:-10, a:20, s:10}, msg: "實行嚴刑峻法，廢除世襲特權，國力大增，但也變得冷酷。" },
+                { text: "儒家學者 (如孟子)", tooltip: "穩定+30，糧食-5", effect: {g:-5, a:0, s:30}, msg: "推行仁政，民貴君輕，百姓愛戴您。" },
+                { text: "墨家學者 (如墨子)", tooltip: "防禦力提升，糧食+10", effect: {g:10, a:10, s:5}, msg: "提倡兼愛非攻，並協助改良了城防器械。" }
+            ]
+        },
+        {
+            id: 4,
+            title: "鄰國政變：田氏代齊",
+            desc: "東方的大國齊國發生劇變！權臣田和將國君齊康公流放到海邊，自己做了國君。這打破了周禮的傳統。您要如何反應？",
+            options: [
+                { text: "趁火打劫，攻打齊國", tooltip: "若軍力>50則勝，否則敗", effect: "war_qi", msg: "" },
+                { text: "承認田氏地位，建立外交", tooltip: "穩定+10", effect: {g:0, a:0, s:10}, msg: "魏齊建交，邊境暫時安寧。" },
+                { text: "譴責田氏，號召諸侯", tooltip: "聲望上升，但無實質收益", effect: {g:-5, a:0, s:5}, msg: "獲得了周天子的口頭嘉獎。" }
+            ]
+        },
+        {
+            id: 5,
+            title: "水利興修",
+            desc: "聽聞秦國李冰父子修建都江堰，使成都平原成為天府之國。我們魏國是否也要投入資源興修水利（如西門豹治水）？",
+            options: [
+                { text: "傾國之力修水利", tooltip: "糧食-30，未來糧食產量大增", effect: {g:-30, a:0, s:10}, msg: "短期內國庫耗盡，但為萬世打下基礎。" },
+                { text: "無力負擔，專注軍事", tooltip: "軍力+10", effect: {g:0, a:10, s:0}, msg: "放棄了農業發展的機會。" }
+            ]
+        },
+        {
+            id: 6,
+            title: "秦軍東出",
+            desc: "秦國商鞅變法後國力大增，虎狼之師開始東出函谷關，首當其衝的就是我們魏國！決戰時刻到了！",
+            options: [
+                { text: "合縱抗秦 (聯合趙、韓)", tooltip: "需要高外交(穩定)", effect: "war_final_alliance", msg: "" },
+                { text: "與秦國決一死戰", tooltip: "需要極高軍力", effect: "war_final_solo", msg: "" },
+                { text: "割地求和", tooltip: "遊戲失敗", effect: "surrender", msg: "" }
+            ]
+        }
+    ];
+
+    function log(msg) {
+        const logArea = document.getElementById('log-area');
+        const p = document.createElement('p');
+        p.textContent = `[${state.year}年] ${msg}`;
+        logArea.prepend(p);
+    }
+
+    function updateDisplay() {
+        document.getElementById('year').innerText = state.year;
+        document.getElementById('grain').innerText = state.grain;
+        document.getElementById('army').innerText = state.army;
+        document.getElementById('stability').innerText = state.stability;
+        
+        // 顏色警示
+        document.getElementById('grain').style.color = state.grain < 20 ? 'red' : 'inherit';
+        document.getElementById('army').style.color = state.army < 20 ? 'red' : 'inherit';
+        document.getElementById('stability').style.color = state.stability < 20 ? 'red' : 'inherit';
+    }
+
+    function loadEvent() {
+        if (state.turn >= events.length) {
+            endGame(true); // 勝利或存活
+            return;
+        }
+
+        const evt = events[state.turn];
+        document.getElementById('event-title').innerText = evt.title;
+        document.getElementById('event-desc').innerText = evt.desc;
+        
+        const choicesDiv = document.getElementById('choices-container');
+        choicesDiv.innerHTML = '';
+
+        evt.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.innerHTML = `<strong>${opt.text}</strong><span class="tooltip">${opt.tooltip}</span>`;
+            btn.onclick = () => handleChoice(opt);
+            choicesDiv.appendChild(btn);
+        });
+    }
+
+    function handleChoice(opt) {
+        // 處理特殊效果
+        if (opt.effect === "war_qi") {
+            if (state.army > 50) {
+                state.grain += 20;
+                state.army -= 10;
+                log("趁齊國內亂，我軍大勝，掠奪了物資！");
+            } else {
+                state.army -= 20;
+                state.stability -= 10;
+                log("軍力不足，攻齊失敗，損兵折將。");
+            }
+        } else if (opt.effect === "war_final_alliance") {
+            if (state.stability > 60) {
+                endGame("win_alliance");
+                return;
+            } else {
+                endGame("lose_betrayal");
+                return;
+            }
+        } else if (opt.effect === "war_final_solo") {
+            if (state.army > 80 && state.grain > 40) {
+                endGame("win_hegemony");
+                return;
+            } else {
+                endGame("lose_qin");
+                return;
+            }
+        } else if (opt.effect === "surrender") {
+            endGame("lose_surrender");
+            return;
+        } else {
+            // 一般數值變更
+            state.grain += opt.effect.g;
+            state.army += opt.effect.a;
+            state.stability += opt.effect.s;
+            log(opt.msg);
+        }
+
+        // 檢查是否Game Over
+        if (state.grain <= 0 || state.army <= 0 || state.stability <= 0) {
+            endGame("collapse");
+            return;
+        }
+
+        state.turn++;
+        state.year += 20; // 時間流逝
+        updateDisplay();
+        loadEvent();
+    }
+
+    function endGame(type) {
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('ending-screen').style.display = 'block';
+        const title = document.getElementById('end-title');
+        const desc = document.getElementById('end-desc');
+
+        if (type === "collapse") {
+            title.innerText = "國家崩潰";
+            desc.innerText = "由於治國無方（某項數值歸零），國內發生暴動/饑荒/兵變，您的國家在戰國七雄的爭霸中被提早淘汰了。";
+        } else if (type === "win_alliance") {
+            title.innerText = "合縱抗秦成功";
+            desc.innerText = "您憑藉高超的外交手腕（高穩定度），成功聯合趙、韓，在函谷關擋住了秦軍。雖然沒有統一天下，但魏國成為了山東六國的領袖！";
+        } else if (type === "lose_betrayal") {
+            title.innerText = "盟友背叛";
+            desc.innerText = "您試圖合縱抗秦，但國內不穩，盟友見風轉舵。秦軍各個擊破，魏國滅亡。";
+        } else if (type === "win_hegemony") {
+            title.innerText = "新的霸主";
+            desc.innerText = "憑藉強大的軍力和充足的糧草，您正面擊潰了秦軍！歷史被改寫，魏國取代秦國統一了天下！";
+        } else if (type === "lose_qin") {
+            title.innerText = "長平之痛";
+            desc.innerText = "雖然您奮力一搏，但秦國商鞅變法後的實力太過強大。魏軍主力被殲滅，國家滅亡。";
+        } else if (type === "lose_surrender") {
+            title.innerText = "苟延殘喘";
+            desc.innerText = "您選擇割地求和。雖然保住了性命，但魏國已淪為秦國的附庸，最終難逃滅亡的命運。";
+        }
+    }
+
+    // 開始遊戲
+    updateDisplay();
+    loadEvent();
+
+</script>
+
+</body>
+</html>
